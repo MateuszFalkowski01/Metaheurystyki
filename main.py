@@ -1,5 +1,6 @@
 from itertools import permutations
-from random import shuffle, randint
+from random import shuffle, randint, random, gauss
+from math import exp
 import csv
 
 
@@ -53,7 +54,7 @@ def hill_climbing(graph, max_iterations=1000):
     current = random_solution(graph)
     for i in range(max_iterations):
         neighbours = generate_neighbours(current)
-        best = min(neighbours, key=lambda n: loss(graph,n))  # w liście neighbours dla każdego n obliczana jest strata
+        best = min(neighbours, key=lambda n: loss(graph,n))
         if loss(graph,best) < loss(graph, current):
             current = best
         else:
@@ -100,6 +101,35 @@ def tabu_search(graph, max_iterations=1000, tabu_size=None):
 
     return best_solution,best_loss
 
+# otoczenie punktu roboczego - zbiór sąsiadów danego rozwiązania
+# losowanie normalne faworyzuje sąsiadów bliższych aktualnego rozwiązania
+def simulated_annealing(graph, max_iterations=1000, T0=100, alpha=0.95):
+    current = random_solution(graph)
+    current_loss = loss(graph,current)
+    best = current.copy()
+    best_loss = current_loss
+
+    for i in range(max_iterations):
+        T = T0 * (alpha ** i)
+        if T <= 0:
+            break
+
+        neighbours = generate_neighbours(current)
+        id = int(abs(gauss(0, 1)) % len(neighbours))
+        neighbour = neighbours[id]
+        neighbour_loss = loss(graph,neighbour)
+
+        delta = neighbour_loss - current_loss
+
+        if delta < 0 or random() < exp(-delta/T):
+            current = neighbour
+            current_loss = neighbour_loss
+            if current_loss < best_loss:
+                best = current
+                best_loss = current_loss
+
+    return best, best_loss
+
 
 # Adjacency List
 graph1 = {
@@ -135,5 +165,8 @@ shc_solution, shc_loss = stochastic_hill_climbing(graph2, 10000)
 print("Hill Climbing Stochastic:", shc_solution, "Loss:", shc_loss)
 
 graph = load_graph("graph.csv")
-solution = tabu_search(graph)
+solution = tabu_search(graph, 1000)
 print("Tabu search:", solution)
+
+solution, value = simulated_annealing(graph2, 10000)
+print("Simulated Annealing:", solution, "Loss:", value)
