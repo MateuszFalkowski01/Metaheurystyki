@@ -1,5 +1,17 @@
 from itertools import permutations
 from random import shuffle, randint
+import csv
+
+
+def load_graph(file):
+    graph = {}
+    with open(file, newline='') as csvfile:
+        reader = csv.reader(csvfile)
+        for row in reader:
+            node = int(row[0])
+            neighbours = list(map(int, row[1:]))
+            graph[node] = neighbours
+    return graph
 
 def is_hamiltonian_path(graph,path):
     for i in range(len(path) -1):
@@ -57,6 +69,37 @@ def stochastic_hill_climbing(graph, max_iterations=1000):
             current = random
     return current, loss(graph,current)
 
+def tabu_search(graph, max_iterations=1000, tabu_size=None):
+    current = random_solution(graph)
+    tabu_list = [current.copy()]
+    best_solution = current.copy()
+    best_loss = loss(graph,best_solution)
+    checkpoint = []
+
+    for i in range(max_iterations):
+        neigbours = [n for n in generate_neighbours(current) if n not in tabu_list]
+
+        if not neigbours:
+            if checkpoint:
+                current = checkpoint.pop()
+                continue
+            else:
+                break
+
+        best_neighbour = min(neigbours, key=lambda n: loss(graph,n))
+
+        if loss(graph,best_neighbour) < best_loss:
+            best_solution = best_neighbour.copy()
+            best_loss = loss(graph,best_solution)
+            checkpoint.append(current.copy())
+
+        current = best_neighbour
+        tabu_list.append(current.copy())
+        if tabu_size is not None and len(tabu_list) > tabu_size:
+            tabu_list.pop(0)
+
+    return best_solution,best_loss
+
 
 # Adjacency List
 graph1 = {
@@ -91,3 +134,6 @@ print("Hill Climbing:", hc_solution, "Loss:", hc_loss)
 shc_solution, shc_loss = stochastic_hill_climbing(graph2, 10000)
 print("Hill Climbing Stochastic:", shc_solution, "Loss:", shc_loss)
 
+graph = load_graph("graph.csv")
+solution = tabu_search(graph)
+print("Tabu search:", solution)
