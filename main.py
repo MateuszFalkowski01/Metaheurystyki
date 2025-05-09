@@ -1,5 +1,5 @@
 from itertools import permutations
-from random import shuffle, randint, random, gauss
+from random import shuffle, randint, random, gauss, sample
 from math import exp
 import csv
 
@@ -130,6 +130,87 @@ def simulated_annealing(graph, max_iterations=1000, T0=100, alpha=0.95):
 
     return best, best_loss
 
+# Krzyżowanie jednopunktowe - losujemy punkt krzyżowania, a następnie kopiujemy rodzica 1 do punktu i dopełniamy elementami z rodzica 2
+def one_point_corssover(parent1,parent2):
+    size = len(parent1)
+    point = randint(1, size - 2)
+    child = parent1[:point] + [x for x in parent2 if x not in parent1[:point]]
+    return child
+
+# Krzyżowanie pozycyjne - losujemy pozycje połowy pozycji z rodzica 1 i wypełniamy elementami z rodzica 2
+def crossover_position(parent1,parent2):
+    size = len(parent1)
+    child = [-1] * size
+    positions = sample(range(size), size // 2)
+    for i in positions:
+        child[i] = parent1[i]
+    fill = [x for x in parent2 if x not in child]
+    for i in range(size):
+        if child[i] == -1:
+            child[i] = fill.pop(0)
+    return child
+
+# zamiana dwóch losowych genów
+def mutation_swap(id):
+    i,j = randint(0, len(id) - 1), randint(0, len(id) - 1)
+    id[i], id[j] = id[j], id[i]
+    return id
+
+# odwrócenie losowego fragmentu
+def mutation_inversion(id):
+    i,j = sorted([randint(0, len(id) - 1), randint(0, len(id) - 1)]) # i musi być mniejsze
+    id[i:j+1] = reversed(id[i:j+1])
+    return id
+
+def stop_by_iterations(iteration, max_iterations, **kwargs):
+    return iteration >= max_iterations
+
+def stop_by_stagnation(iteration, max_iterations, stagnation_counter, max_stagnation):
+    return iteration >= max_iterations or stagnation_counter >= max_stagnation
+
+def genetic_algorithm(graph,
+                      population_size=100,
+                      max_iterations=1000,
+                      crossover_method="one_point",
+                      mutation_method="swap",
+                      stop_condition="iterations",
+                      elite_size=1,
+                      max_stagnation=100):
+
+    population = [random_solution(graph) for i in range(population_size)]
+    population.sort(key=lambda x: loss(graph, x))
+    best = population[0]
+    best_loss = loss(graph, best)
+    iteration = 0
+    stagnation_counter = 0
+
+    crossover_fun = one_point_corssover if crossover_method == "one_point" else crossover_position
+    mutation_fun = mutation_swap if mutation_method == "swap" else mutation_inversion
+    stop_fun = stop_by_iterations if stop_condition == "iterations" else stop_by_stagnation
+
+    while not stop_fun(iteration=iteration,max_iterations=max_iterations, stagnation_counter=stagnation_counter, max_stagnation=max_stagnation):
+        new_population = population[:elite_size]
+
+        while len(new_population) < population_size:
+            p1, p2 = sorted([randint(0, population_size-1) for i in range(2)], key=lambda i: loss(graph, population[i]))
+            child = crossover_fun(population[p1], population[p2])
+            child = mutation_fun(child)
+            new_population.append(child)
+
+        population = sorted(new_population, key=lambda i: loss(graph, i))
+        current_best = population[0]
+        current_loss = loss(graph, current_best)
+
+        if current_loss < best_loss:
+            best = current_best
+            best_loss = current_loss
+            stagnation_counter = 0
+        else:
+            stagnation_counter += 1
+
+        iteration += 1
+
+    return best, best_loss
 
 # Adjacency List
 graph1 = {
@@ -170,3 +251,6 @@ print("Tabu search:", solution)
 
 solution, value = simulated_annealing(graph2, 10000)
 print("Simulated Annealing:", solution, "Loss:", value)
+
+solution, gen_loss = genetic_algorithm(graph2, 100, 1000, "one_point", "swap", "iterations", 2, 200)
+print("Genetic Algorithm:", solution, "Loss:", gen_loss)
