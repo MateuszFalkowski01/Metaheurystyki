@@ -96,7 +96,7 @@ def tabu_search(graph, max_iterations=1000, tabu_size=None):
 
 # otoczenie punktu roboczego - zbiór sąsiadów danego rozwiązania
 # losowanie normalne faworyzuje sąsiadów bliższych aktualnego rozwiązania
-def simulated_annealing(graph, max_iterations=1000, T0=100, alpha=0.95):
+def simulated_annealing(graph, max_iterations=1000, T0=200, alpha=0.95):
     current = random_solution(graph)
     current_loss = loss(graph,current)
     best = current.copy()
@@ -144,15 +144,17 @@ def crossover_position(parent1,parent2):
     return child
 
 # zamiana dwóch losowych genów
-def mutation_swap(id):
-    i,j = randint(0, len(id) - 1), randint(0, len(id) - 1)
-    id[i], id[j] = id[j], id[i]
+def mutation_swap(id, mutation_rate=0.05):
+    if random() < mutation_rate:
+        i,j = randint(0, len(id) - 1), randint(0, len(id) - 1)
+        id[i], id[j] = id[j], id[i]
     return id
 
 # odwrócenie losowego fragmentu
-def mutation_inversion(id):
-    i,j = sorted([randint(0, len(id) - 1), randint(0, len(id) - 1)])
-    id[i:j+1] = reversed(id[i:j+1])
+def mutation_inversion(id, mutation_rate=0.05):
+    if random() < mutation_rate:
+        i,j = sorted([randint(0, len(id) - 1), randint(0, len(id) - 1)])
+        id[i:j+1] = reversed(id[i:j+1])
     return id
 
 def stop_by_iterations(iteration, max_iterations, **kwargs):
