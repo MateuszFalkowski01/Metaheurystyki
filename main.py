@@ -158,7 +158,7 @@ def mutation_swap(id):
 
 # odwrócenie losowego fragmentu
 def mutation_inversion(id):
-    i,j = sorted([randint(0, len(id) - 1), randint(0, len(id) - 1)]) # i musi być mniejsze
+    i,j = sorted([randint(0, len(id) - 1), randint(0, len(id) - 1)])
     id[i:j+1] = reversed(id[i:j+1])
     return id
 
@@ -174,7 +174,7 @@ def genetic_algorithm(graph,
                       crossover_method="one_point",
                       mutation_method="swap",
                       stop_condition="iterations",
-                      elite_size=1,
+                      elite_size=2,
                       max_stagnation=100):
 
     population = [random_solution(graph) for i in range(population_size)]
@@ -237,7 +237,7 @@ graph2 = {
 
 
 solution = Brute_force(graph2)
-print("Exhaustive Search:", solution)
+print("Brute force:", solution)
 
 hc_solution, hc_loss = hill_climbing(graph2, 10000)
 print("Hill Climbing:", hc_solution, "Loss:", hc_loss)
@@ -246,8 +246,8 @@ shc_solution, shc_loss = stochastic_hill_climbing(graph2, 10000)
 print("Hill Climbing Stochastic:", shc_solution, "Loss:", shc_loss)
 
 graph = load_graph("graph.csv")
-solution = tabu_search(graph, 1000)
-print("Tabu search:", solution)
+solution, tabu_loss = tabu_search(graph, 1000)
+print("Tabu search:", solution, "Loss:", tabu_loss)
 
 solution, value = simulated_annealing(graph2, 10000)
 print("Simulated Annealing:", solution, "Loss:", value)
