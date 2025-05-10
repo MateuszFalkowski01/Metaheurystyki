@@ -14,12 +14,6 @@ def load_graph(file):
             graph[node] = neighbours
     return graph
 
-def is_hamiltonian_path(graph,path):
-    for i in range(len(path) -1):
-        if path[i+1] not in graph[path[i]]:
-            return False
-    return True
-
 # stratą jest liczba błędnych (nieistniejących) krawędzi
 def loss(graph,path):
     error = 0
@@ -42,11 +36,10 @@ def generate_neighbours(path):
             neighbours.append(neighbour)
     return neighbours
 
-
 def Brute_force(graph):
     nodes = list(graph.keys())
     for perm in permutations(nodes):
-        if is_hamiltonian_path(graph,perm):
+        if loss(graph,perm) == 0:
             return perm
     return "Solution does not exist"
 
