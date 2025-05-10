@@ -127,21 +127,31 @@ def simulated_annealing(graph, max_iterations=1000, T0=200, alpha=0.95):
 def one_point_corssover(parent1,parent2):
     size = len(parent1)
     point = randint(1, size - 2)
-    child = parent1[:point] + [x for x in parent2 if x not in parent1[:point]]
-    return child
+    child1 = parent1[:point] + [x for x in parent2 if x not in parent1[:point]]
+    child2 = parent2[:point] + [x for x in parent1 if x not in parent2[:point]]
+    return child1, child2
 
 # Krzyżowanie pozycyjne - losujemy pozycje połowy pozycji z rodzica 1 i wypełniamy elementami z rodzica 2
 def crossover_position(parent1,parent2):
     size = len(parent1)
-    child = [-1] * size
     positions = sample(range(size), size // 2)
+
+    child1 = [-1] * size
     for i in positions:
-        child[i] = parent1[i]
-    fill = [x for x in parent2 if x not in child]
+        child1[i] = parent1[i]
+    fill = [x for x in parent2 if x not in child1]
     for i in range(size):
-        if child[i] == -1:
-            child[i] = fill.pop(0)
-    return child
+        if child1[i] == -1:
+            child1[i] = fill.pop(0)
+
+    child2 = [-1] * size
+    for i in positions:
+        child2[i] = parent1[i]
+    fill = [x for x in parent2 if x not in child2]
+    for i in range(size):
+        if child2[i] == -1:
+            child2[i] = fill.pop(0)
+    return child1, child2
 
 # zamiana dwóch losowych genów
 def mutation_swap(id, mutation_rate=0.05):
@@ -188,9 +198,12 @@ def genetic_algorithm(graph,
 
         while len(new_population) < population_size:
             p1, p2 = sorted([randint(0, population_size-1) for i in range(2)], key=lambda i: loss(graph, population[i]))
-            child = crossover_fun(population[p1], population[p2])
-            child = mutation_fun(child)
-            new_population.append(child)
+            child1, child2 = crossover_fun(population[p1], population[p2])
+            child1 = mutation_fun(child1)
+            child2 = mutation_fun(child2)
+            new_population.append(child1)
+            if len(new_population) < population_size:
+                new_population.append(child2)
 
         population = sorted(new_population, key=lambda i: loss(graph, i))
         current_best = population[0]
