@@ -1,5 +1,5 @@
 from itertools import permutations
-from random import shuffle, randint, random, gauss, sample
+from random import shuffle, randint, random, sample, choice
 from math import exp
 import csv
 
@@ -108,7 +108,7 @@ def simulated_annealing(graph, max_iterations=1000, T0=200, alpha=0.95):
             break
 
         neighbours = generate_neighbours(current)
-        id = int(abs(gauss(0, 1)) % len(neighbours))
+        id = randint(0,len(neighbours) -1)
         neighbour = neighbours[id]
         neighbour_loss = loss(graph,neighbour)
 
@@ -146,8 +146,8 @@ def crossover_position(parent1,parent2):
 
     child2 = [-1] * size
     for i in positions:
-        child2[i] = parent1[i]
-    fill = [x for x in parent2 if x not in child2]
+        child2[i] = parent2[i]
+    fill = [x for x in parent1 if x not in child2]
     for i in range(size):
         if child2[i] == -1:
             child2[i] = fill.pop(0)
@@ -180,7 +180,8 @@ def genetic_algorithm(graph,
                       mutation_method="swap",
                       stop_condition="iterations",
                       elite_size=2,
-                      max_stagnation=100):
+                      max_stagnation=100,
+                      luck=0.05):
 
     population = [random_solution(graph) for i in range(population_size)]
     population.sort(key=lambda x: loss(graph, x))
@@ -195,6 +196,9 @@ def genetic_algorithm(graph,
 
     while not stop_fun(iteration=iteration,max_iterations=max_iterations, stagnation_counter=stagnation_counter, max_stagnation=max_stagnation):
         new_population = population[:elite_size]
+        if random() < luck:
+            freeloader = choice(population[elite_size:])
+            new_population.append(freeloader.copy())
 
         while len(new_population) < population_size:
             p1, p2 = sorted([randint(0, population_size-1) for i in range(2)], key=lambda i: loss(graph, population[i]))
