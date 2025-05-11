@@ -1,5 +1,5 @@
 from itertools import permutations
-from random import shuffle, randint, random, sample, choice
+from random import shuffle, randint, random, sample
 from math import exp
 import csv
 
@@ -173,6 +173,11 @@ def stop_by_iterations(iteration, max_iterations, **kwargs):
 def stop_by_stagnation(iteration, max_iterations, stagnation_counter, max_stagnation):
     return iteration >= max_iterations or stagnation_counter >= max_stagnation
 
+def tournament(population, graph, k=5):
+    participants = sample(population, k)
+    participants.sort(key=lambda i: loss(graph, i))
+    return participants[0]
+
 def genetic_algorithm(graph,
                       population_size=100,
                       max_iterations=1000,
@@ -180,8 +185,7 @@ def genetic_algorithm(graph,
                       mutation_method="swap",
                       stop_condition="iterations",
                       elite_size=2,
-                      max_stagnation=100,
-                      luck=0.05):
+                      max_stagnation=100):
 
     population = [random_solution(graph) for i in range(population_size)]
     population.sort(key=lambda x: loss(graph, x))
@@ -196,13 +200,12 @@ def genetic_algorithm(graph,
 
     while not stop_fun(iteration=iteration,max_iterations=max_iterations, stagnation_counter=stagnation_counter, max_stagnation=max_stagnation):
         new_population = population[:elite_size]
-        if random() < luck:
-            freeloader = choice(population[elite_size:])
-            new_population.append(freeloader.copy())
+
 
         while len(new_population) < population_size:
-            p1, p2 = sorted([randint(0, population_size-1) for i in range(2)], key=lambda i: loss(graph, population[i]))
-            child1, child2 = crossover_fun(population[p1], population[p2])
+            p1 = tournament(population, graph)
+            p2 = tournament(population, graph)
+            child1, child2 = crossover_fun(p1,p2)
             child1 = mutation_fun(child1)
             child2 = mutation_fun(child2)
             new_population.append(child1)
